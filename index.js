@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 //MongoDB Connected
-const uri = `mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@ac-3lraqhp-shard-00-00.lqv7isf.mongodb.net:27017,ac-3lraqhp-shard-00-01.lqv7isf.mongodb.net:27017,ac-3lraqhp-shard-00-02.lqv7isf.mongodb.net:27017/?ssl=true&replicaSet=atlas-rwv3eh-shard-0&authSource=admin&retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.lqv7isf.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
@@ -44,6 +44,7 @@ const verifyAccess = (req, res, next) => {
 async function run() {
   try {
     await client.connect();
+    console.log("🛢 Database connected successfully!");
     const languageCollection = client.db("courses").collection("language");
     const admissionCollection = client.db("courses").collection("admission");
     const jobCollection = client.db("courses").collection("job");
