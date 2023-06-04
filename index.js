@@ -20,7 +20,6 @@ app.use(express.json());
 //MongoDB Connected
 const uri = `mongodb+srv://${process.env.DB_USER2}:${process.env.DB_PASSWORD2}@cluster0.7z6gsyz.mongodb.net/?retryWrites=true&w=majority`;
 
-
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -158,13 +157,14 @@ async function run() {
     //===============Bookstore/SkillBooks for this code end========
 
     app.put("/user", async (req, res) => {
-      const { email, name } = req.body;
+      const { email, name, image } = req.body;
       const filter = { email: email };
       const options = { upsert: true };
       const updateDoc = {
         $set: {
           name: name,
           email: email,
+          image: image,
         },
       };
       const result = await usersCollection.updateOne(
