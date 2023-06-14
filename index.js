@@ -157,7 +157,7 @@ async function run() {
     //===============Bookstore/SkillBooks for this code end========
 
     app.put("/user", async (req, res) => {
-      const { email, name, image, messages } = req.body;
+      const { email, name, image } = req.body;
       const filter = { email: email };
       const options = { upsert: true };
       const updateDoc = {
@@ -165,7 +165,6 @@ async function run() {
           name: name,
           email: email,
           image: image,
-          message: messages,
         },
       };
       const result = await usersCollection.updateOne(
@@ -176,10 +175,30 @@ async function run() {
       const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET);
       res.send({ success: true, result, token });
     });
+
+    app.put("/userMessageCount", verifyAccess, async (req, res) => {
+      const { email, messages } = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          email: email,
+          messages: messages,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send({ success: true, result });
+    });
+    
     app.get("/user", verifyAccess, async (req, res) => {
       const users = await usersCollection.find({}).toArray();
       res.send(users);
     });
+
     app.get("/user/:id", verifyAccess, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
