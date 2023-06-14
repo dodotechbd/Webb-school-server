@@ -157,7 +157,7 @@ async function run() {
     //===============Bookstore/SkillBooks for this code end========
 
     app.put("/user", async (req, res) => {
-      const { email, name, image } = req.body;
+      const { email, name, image, messages } = req.body;
       const filter = { email: email };
       const options = { upsert: true };
       const updateDoc = {
@@ -165,6 +165,7 @@ async function run() {
           name: name,
           email: email,
           image: image,
+          message: messages,
         },
       };
       const result = await usersCollection.updateOne(
