@@ -1,15 +1,12 @@
-import cors from "cors";
-import { configDotenv } from "dotenv";
-import express from "express";
-import pkg from "jsonwebtoken";
-import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
-import stripe from "stripe";
-
+const express = require("express");
+const cors = require("cors");
 const app = express();
-configDotenv();
-stripe(process.env.STRIPE_SECRET_KEY);
+require("dotenv").config();
+const server = require("http").createServer(app);
+const jwt = require("jsonwebtoken");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
-const { sign, verify } = pkg;
 
 //Midddle War
 app.use(cors());
@@ -33,7 +30,7 @@ const verifyAccess = (req, res, next) => {
     return res.status(401).send({ message: "UnAuthorized access" });
   }
   const token = authorizationToken.split(" ")[1];
-  verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
       return res.status(403).send({ message: "Forbidden access" });
     }
@@ -167,7 +164,7 @@ async function run() {
         updateDoc,
         options
       );
-      const token = sign({ email: email }, process.env.ACCESS_TOKEN_SECRET);
+      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET);
       res.send({ success: true, result, token });
     });
 
@@ -587,6 +584,7 @@ async function run() {
       const reviews = await bookReviewCollection.find({}).toArray();
       res.send(reviews);
     });
+
     app.post("/create-payment-intent", verifyAccess, async (req, res) => {
       const { totalAmount } = req.body;
       const amount = totalAmount * 100;
