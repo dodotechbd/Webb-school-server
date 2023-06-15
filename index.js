@@ -1,21 +1,22 @@
-const express = require("express");
-const cors = require("cors");
+import cors from "cors";
+import { configDotenv } from "dotenv";
+import express from "express";
+import pkg from "jsonwebtoken";
+import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
+import stripe from "stripe";
+
 const app = express();
-require("dotenv").config();
-const server = require("http").createServer(app);
-const io = require("socket.io")(server, {
-  cors: {
-    origin: "*",
-  },
-});
-const jwt = require("jsonwebtoken");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const path = require("path");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+configDotenv();
+stripe(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
+const { sign, verify } = pkg;
+
 //Midddle War
 app.use(cors());
+
+//parser
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 //MongoDB Connected
 const uri = `mongodb+srv://${process.env.DB_USER2}:${process.env.DB_PASSWORD2}@cluster0.7z6gsyz.mongodb.net/?retryWrites=true&w=majority`;
@@ -32,7 +33,7 @@ const verifyAccess = (req, res, next) => {
     return res.status(401).send({ message: "UnAuthorized access" });
   }
   const token = authorizationToken.split(" ")[1];
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+  verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
       return res.status(403).send({ message: "Forbidden access" });
     }
@@ -70,7 +71,6 @@ async function run() {
       .db("Bookstore")
       .collection("SkillBooks");
     const AudioBookCollection = client.db("Bookstore").collection("AudioBook");
-    const chatDataCollection = client.db("chatData").collection("chat");
 
     const verifyAdmin = async (req, res, next) => {
       const requester = req.decoded.email;
@@ -95,12 +95,6 @@ async function run() {
       const addblogs = req.body;
       const result = await webBlogsCollection.insertOne(addblogs);
       res.send(result);
-    });
-
-    app.post("/chat", async (req, res) => {
-      const addchat = req.body;
-      const chatresult = await chatDataCollection.insertOne(addchat);
-      res.send(chatresult);
     });
 
     app.get("/", function (req, res) {
@@ -173,7 +167,7 @@ async function run() {
         updateDoc,
         options
       );
-      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET);
+      const token = sign({ email: email }, process.env.ACCESS_TOKEN_SECRET);
       res.send({ success: true, result, token });
     });
 
@@ -334,12 +328,6 @@ async function run() {
       res.send(courses);
     });
     // GOOGLE MEET LINK END ------------------------------------->
-    // chat
-    io.on("connection", (socket) => {
-      socket.on("chat", (payload) => {
-        io.emit("chat", payload);
-      });
-    });
 
     app.get("/job", async (req, res) => {
       const query = {};
@@ -622,6 +610,6 @@ app.get("/", (req, res) => {
   res.send("Webb School..");
 });
 
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
