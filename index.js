@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 require("dotenv").config();
-const server = require("http").createServer(app);
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -39,10 +38,11 @@ const verifyAccess = (req, res, next) => {
   });
 };
 
-async function run() {
+async function bootstrap() {
   try {
     await client.connect();
     console.log("🛢 Database connected successfully!");
+    const courseCollection = client.db("courses").collection("allCourses");
     const languageCollection = client.db("courses").collection("language");
     const admissionCollection = client.db("courses").collection("admission");
     const jobCollection = client.db("courses").collection("job");
@@ -516,6 +516,42 @@ async function run() {
       res.send(live);
     });
 
+    // new update for courses
+    app.post("/courses", async (req, res) => {
+      const course = req.body;
+      const result = await courseCollection.insertOne(course);
+      res.send(result);
+    });
+
+    app.get("/courses", async (req, res) => {
+      const courses = await courseCollection.find().toArray();
+      res.send(courses);
+    });
+
+    app.get("/courses/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const courses = await courseCollection.findOne(query);
+      res.send(courses);
+    });
+
+    app.put("/courses/:id", async (req, res) => {
+      const { id } = req.params;
+      const course = req.body;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const result = await courseCollection.replaceOne(filter, course, options);
+      res.send({ success: true, result });
+    });
+
+    app.delete("/courses/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await courseCollection.deleteOne(query);
+      res.send(result);
+    });
+    // new update end
+
     app.delete("/Lives/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -599,15 +635,15 @@ async function run() {
         clientSecret: paymentIntent.client_secret,
       });
     });
-  } finally {
+
+    app.listen(port, () => {
+      console.log(`Example app listening on port ${port}`);
+    });
+  } catch (error) {
+    console.log("Failed to connect database", error);
   }
 }
-run().catch(console.dir);
-
-app.get("/", (req, res) => {
-  res.send("Webb School..");
+app.get("/", async (req, res) => {
+  res.send("Webb School Server!!💽");
 });
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});
+bootstrap();
