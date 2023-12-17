@@ -46,6 +46,7 @@ async function bootstrap() {
     await client.connect();
     console.log("🛢 Database connected successfully!");
     const courseCollection = client.db("courses").collection("allCourses");
+    const bookCollection = client.db("books").collection("allBooks");
     const languageCollection = client.db("courses").collection("language");
     const admissionCollection = client.db("courses").collection("admission");
     const jobCollection = client.db("courses").collection("job");
@@ -96,11 +97,6 @@ async function bootstrap() {
       const result = await webBlogsCollection.insertOne(addblogs);
       res.send(result);
     });
-
-    app.get("/", function (req, res) {
-      res.sendFile(__dirname + "/index.html");
-    });
-
     //===============blogs for this code Ends here-========
 
     //===============Bookstore/AcadamicBooks for this code started-========
@@ -553,7 +549,45 @@ async function bootstrap() {
       const result = await courseCollection.deleteOne(query);
       res.send(result);
     });
+
+    // new update for books
+    app.post("/books", async (req, res) => {
+      const book = req.body;
+      const result = await bookCollection.insertOne(book);
+      res.send(result);
+    });
+
+    app.get("/books", async (req, res) => {
+      const books = await bookCollection.find().toArray();
+      res.send(books);
+    });
+
+    app.get("/books/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const books = await bookCollection.findOne(query);
+      res.send(books);
+    });
+
+    app.put("/books/:id", async (req, res) => {
+      const { id } = req.params;
+      const book = req.body;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const result = await bookCollection.replaceOne(filter, book, options);
+      res.send({ success: true, result });
+    });
+
+    app.delete("/books/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await bookCollection.deleteOne(query);
+      res.send(result);
+    });
     // new update end
+
+
+
 
     app.delete("/Lives/:id", async (req, res) => {
       const id = req.params.id;
